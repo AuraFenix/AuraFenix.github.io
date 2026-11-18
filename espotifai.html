@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0d18" />
+  <title>Espotifai · Reproductor Google Drive</title>
+  <style>
+    :root {color-scheme:dark; --bg:#0b0d18; --panel:#141827; --panel2:#191e30; --line:#2b3045; --text:#f8f9ff; --muted:#979cb5; --accent:#c0a4ff; --accent2:#70daf0; --green:#90e7bb; --red:#ffa4b4; --radius:22px;}
+    * { box-sizing: border-box; }
+    html {min-height:100%;}
+    body {margin:0; min-height:100vh; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif; color:var(--text); background: radial-gradient(ellipse at 88% 3%,#33204d88,transparent 36%),radial-gradient(ellipse at 3% 65%,#113e4d44,transparent 42%),var(--bg);}
+    button, input {font:inherit;}
+    button {cursor:pointer;}
+    button:focus-visible, input:focus-visible {outline:2px solid var(--accent2);outline-offset:3px;}
+    button:disabled {opacity:.5;cursor:wait;}
+    .shell {max-width:1260px;margin:0 auto;padding:26px 28px 36px;}
+    header {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:25px;}
+    .brand {display:flex;align-items:center;gap:13px;}
+    .brand-mark {width:45px;height:45px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#d4a7fd,#83dff0);box-shadow:0 8px 28px #9a73d040;color:#181426;font-size:23px;}
+    .brand h1 {margin:0;font-size:23px;line-height:1.1;letter-spacing:-.8px;}
+    .brand small {display:block;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:2.5px;margin-top:5px;}
+    .connection-pill {display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);color:#c4c7dc;background:#ffffff07;border-radius:50px;padding:10px 14px;font-size:12px;white-space:nowrap;}
+    .dot {width:7px;height:7px;background:#9a9bb0;border-radius:50%;}
+    .dot.good {background:var(--green);box-shadow:0 0 12px #90e7bb70;}
+    .panel {border:1px solid #34364d9c;background:linear-gradient(160deg,#191d2ef7,#121624f7);box-shadow:0 18px 65px #01030b38;border-radius:var(--radius);}
+    .connect {padding:24px 27px 22px;margin-bottom:19px;}
+    .section-head {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .eyebrow {font-size:10px;font-weight:800;letter-spacing:2.8px;color:var(--accent);text-transform:uppercase;}
+    h2 {font-size:21px;letter-spacing:-.6px;margin:5px 0 16px;}
+    .entries-list {display:flex;flex-direction:column;gap:10px;}
+    .entry-row {display:flex;align-items:center;gap:10px;}
+    input[type="text"],input[type="url"],input[type="search"] {outline:none;border:1px solid #353b55;background:#0c1020;color:var(--text);padding:12px 14px;border-radius:11px;min-width:0;width:100%;font-size:13px;min-height:45px;}
+    input::placeholder {color:#747992;}
+    input:focus {border-color:var(--accent);box-shadow:0 0 0 3px #c0a4ff15;}
+    .btn-remove {border:1px solid #353b55;border-radius:11px;background:#161b2e;color:#979cb5;width:45px;height:45px;flex:none;display:grid;place-items:center;font-size:16px;transition:color .15s,border-color .15s,background .15s;}
+    .btn-remove:hover {color:var(--red);border-color:#af657480;background:#b4415418;}
+    .form-actions {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;}
+    .btn-primary {border:0;border-radius:11px;background:linear-gradient(135deg,#d1aeff,#a9c5ff);color:#17152a;padding:12px 22px;min-height:45px;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 8px 24px #9b78e12b;}
+    .btn-secondary {border:1px solid #414663;border-radius:11px;background:#1e2336;color:#dce0ef;padding:12px 16px;min-height:45px;font-weight:750;font-size:13px;white-space:nowrap;transition:background .15s;}
+    .btn-secondary:hover {background:#282e47;}
+    .status {display:flex;gap:9px;align-items:flex-start;min-height:38px;margin-top:15px;color:#bfc5db;background:#ffffff06;border:1px solid #ffffff0e;border-radius:11px;padding:10px 12px;font-size:12px;line-height:1.4;}
+    .status:before {content:"●";color:var(--accent2);font-size:11px;flex:none;margin-top:1px;}
+    .status[data-type="error"] {color:#ffd3dc;border-color:#af657452;background:#b4415420;}
+    .status[data-type="error"]:before {color:var(--red);}
+    .status[data-type="success"]:before {color:var(--green);}
+    .content {display:grid;grid-template-columns:minmax(320px,1.03fr) minmax(390px,1fr);gap:19px;align-items:stretch;}
+    .library {padding:23px 19px;min-height:510px;display:flex;flex-direction:column;}
+    .library .section-head {padding:0 6px;}
+    .library h2 {margin-bottom:0;}
+    .counter {display:inline-flex;align-items:center;justify-content:center;border-radius:9px;padding:6px 9px;min-width:40px;background:#ffffff0c;color:#bfc3db;font-size:12px;}
+    .search-wrap {position:relative;margin:19px 5px 10px;}
+    .search-wrap span {position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca0b9;}
+    .search-wrap input {padding-left:38px;background:#0e1221;}
+    .playlist {min-height:300px;max-height:470px;overflow-y:auto;padding:2px 4px 4px; scrollbar-width:thin;scrollbar-color:#565577 transparent;}
+    .track {width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;border:1px solid transparent;border-radius:14px;color:var(--text);padding:11px 12px;margin-bottom:4px;transition:background .15s,border-color .15s;}
+    .track:hover {background:#ffffff0b;}
+    .track.active {background:#b39afd1b;border-color:#a18ae746;}
+    .track-num {font-size:12px;color:#858ba2;width:19px;text-align:center;flex:none;font-variant-numeric:tabular-nums;}
+    .track.active .track-num {color:#cdb8ff;}
+    .track-icon {width:38px;height:38px;border-radius:11px;background:linear-gradient(145deg,#544276,#273953);display:grid;place-items:center;color:#e8dbff;flex:none;font-size:18px;}
+    .track-details {min-width:0;flex:1;}
+    .track-title {display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:700;}
+    .track.active .track-title {color:#ddcaff;}
+    .track-meta {display:block;color:#959bb3;font-size:11px;margin-top:4px;}
+    .empty {height:270px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;color:#9298b1;gap:11px;font-size:13px;line-height:1.6;}
+    .empty-glyph {font-size:42px;opacity:.6;}
+    .player {padding:27px 32px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:510px;overflow:hidden;position:relative;}
+    .player:before {content:"";position:absolute;inset:-140px 0 auto;height:350px;background:radial-gradient(circle,#8764c822,transparent 65%);pointer-events:none;}
+    .player-tag {align-self:flex-start;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:800;z-index:1;}
+    .artwork {width:min(56%,242px);aspect-ratio:1;margin:14px auto 18px;display:grid;place-items:center;position:relative;z-index:1;filter:drop-shadow(0 22px 28px #0008);}
+    .vinyl {width:100%;height:100%;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%,transparent 0px,transparent 4px,#ffffff08 5px,#00000012 6px),conic-gradient(from 30deg,#473866,#172035,#453257,#101d2e,#6b4c83,#22223b,#473866);border:8px solid #0e1424;box-shadow:inset 0 0 25px #0009,0 0 0 1px #666585;display:grid;place-items:center;}
+    .vinyl:after {content:"";position:absolute;width:20%;aspect-ratio:1;background:#0f1422;border:10px solid #d7b4ff;border-radius:50%;box-shadow:0 0 0 5px #272238;}
+    .artwork.spinning .vinyl {animation:spin 8s linear infinite;}
+    @keyframes spin {to {transform:rotate(360deg);}}
+    .art-glow {position:absolute;inset:25%;background:#c38bf660;filter:blur(60px);z-index:-1;}
+    .song {max-width:100%;text-align:center;z-index:1;margin-bottom:17px;}
+    .song h3 {font-size:23px;line-height:1.2;letter-spacing:-.5px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:440px;}
+    .song p {margin:7px 0 0;font-size:12px;color:#a7acc3;}
+    .transport {width:100%;max-width:450px;z-index:1;}
+    .timebar {display:flex;align-items:center;gap:11px;font-size:11px;color:#a4aac1;font-variant-numeric:tabular-nums;}
+    input[type="range"] {accent-color:#c0a4ff;cursor:pointer;}
+    .seek {width:100%;height:5px;}
+    .controls {display:flex;align-items:center;justify-content:center;gap:18px;margin:16px 0 18px;}
+    .icon-btn {background:transparent;border:0;color:#d6d9ea;display:grid;place-items:center;border-radius:12px;padding:9px;min-width:40px;min-height:40px;}
+    .icon-btn:hover {background:#ffffff12;color:white;}
+    .icon-btn[aria-pressed="true"] {color:var(--accent);}
+    .icon-btn svg {width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:2;}
+    .play-btn {display:grid;place-items:center;width:59px;height:59px;border:0;border-radius:50%;background:linear-gradient(135deg,#d6b8ff,#9acdf4);color:#1d1930;box-shadow:0 8px 25px #b18cfb4d;}
+    .play-btn svg {width:24px;height:24px;fill:currentColor;stroke:none;}
+    .options {display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #3b3d51;padding-top:15px;}
+    .option-btn {background:transparent;border:1px solid #41445d;border-radius:50px;color:#afb4cb;padding:7px 12px;font-size:11px;font-weight:750;display:inline-flex;gap:8px;align-items:center;}
+    .option-btn:hover {background:#ffffff0e;}
+    .option-btn[aria-pressed="true"] {color:#decfff;border-color:#9b83e477;background:#a38ad714;}
+    .option-btn svg {width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+    .volume {display:flex;align-items:center;gap:7px;}
+    .volume input {width:78px;height:4px;}
+    @media (max-width:850px) {.content {grid-template-columns:1fr}.player {min-height:500px}.library {min-height:360px}.playlist {max-height:360px}}
+    @media (max-width:560px) {.shell {padding:19px 13px 24px}header {margin-bottom:18px}.brand h1 {font-size:20px}.brand small{font-size:9px}.connection-pill {font-size:10px;padding:9px}.connect {padding:20px 16px}.form-actions{flex-direction:column;align-items:stretch}.player{padding:23px 19px}.song h3{font-size:21px}.artwork{width:min(62%,225px)}.controls{gap:11px}.library {padding:19px 12px}}
+    @media (prefers-reduced-motion:reduce) {.artwork.spinning .vinyl {animation:none}}
+  </style>
+<link rel="icon" type="image/png" href="https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Green_icon_-_Flag.ZGH.png/960px-Green_icon_-_Flag.ZGH.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail">
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><div class="brand-mark" aria-hidden="true">♫</div><div><h1>Espotifai<span style="color:var(--accent)">.</span></h1><small>YOUR DRIVE MUSIC</small></div></div>
+      <div class="connection-pill"><span class="dot" id="connectionDot"></span><span id="connectionText">Sin biblioteca cargada</span></div>
+    </header>
+    <section class="panel connect" aria-labelledby="connectTitle">
+      <div class="eyebrow">CARPETAS PÚBLICAS</div>
+      <h2 id="connectTitle">Enlaces de Google Drive</h2>
+      <form id="publicForm">
+        <div class="entries-list" id="folderEntries">
+          <div class="entry-row">
+            <input type="text" class="folder-input" autocomplete="url" spellcheck="false" placeholder="https://drive.google.com/drive/folders/..." aria-label="Enlace de carpeta 1" />
+          </div>
+          <div class="entry-row">
+            <input type="text" class="folder-input" autocomplete="url" spellcheck="false" placeholder="https://drive.google.com/drive/folders/..." aria-label="Enlace de carpeta 2" />
+            <button type="button" class="btn-remove" title="Quitar enlace" aria-label="Quitar enlace">✕</button>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="addEntry">+ Añadir otro enlace</button>
+          <button type="submit" class="btn-primary" id="loadPublic">Cargar todas las canciones ↗</button>
+        </div>
+      </form>
+      <div class="status" id="status" role="status" aria-live="polite" data-type="info">Listo para cargar.</div>
+    </section>
+    <main class="content">
+      <section class="panel library" aria-labelledby="libraryTitle">
+        <div class="section-head"><div><div class="eyebrow">BIBLIOTECA</div><h2 id="libraryTitle">Tus canciones</h2></div><span class="counter" id="songCount">0 pistas</span></div>
+        <div class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar en tu playlist..." aria-label="Buscar canciones" /></div>
+        <div class="playlist" id="playlist" aria-label="Lista de canciones"><div class="empty"><span class="empty-glyph">♫</span><span>Sin canciones cargadas.</span></div></div>
+      </section>
+      <section class="panel player" aria-label="Reproductor de música">
+        <div class="player-tag">AHORA SUENA</div>
+        <div class="artwork" id="artwork" aria-hidden="true"><div class="art-glow"></div><div class="vinyl"></div></div>
+        <div class="song"><h3 id="currentTitle" title="Sin reproducción">Elige una canción</h3><p id="currentSubtitle">—</p></div>
+        <div class="transport">
+          <div class="timebar"><span id="currentTime">0:00</span><input id="seek" class="seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Posición de la canción" /><span id="duration">0:00</span></div>
+          <div class="controls">
+            <button class="icon-btn" id="shuffle" type="button" title="Activar reproducción aleatoria" aria-label="Reproducción aleatoria" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m18 14 4 4-4 4M18 2l4 4-4 4M2 18h2c6 0 7-12 13-12h5M2 6h2c3 0 4 2 6 5M14 18h3c2 0 4 0 5 0"/></svg></button>
+            <button class="icon-btn" id="previous" type="button" title="Anterior" aria-label="Canción anterior"><svg viewBox="0 0 24 24"><path d="M5 5v14M19 6 8 12l11 6V6Z"/></svg></button>
+            <button class="play-btn" id="playPause" type="button" title="Reproducir" aria-label="Reproducir"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 4.5v15L20 12 8 4.5Z"/></svg></button>
+            <button class="icon-btn" id="next" type="button" title="Siguiente" aria-label="Siguiente canción"><svg viewBox="0 0 24 24"><path d="M19 5v14M5 6l11 6-11 6V6Z"/></svg></button>
+            <button class="icon-btn" id="repeat" type="button" title="Activar repetición" aria-label="Modo de repetición" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg></button>
+          </div>
+          <div class="options"><button type="button" id="repeatModeButton" class="option-btn" aria-label="Modo de repetición"><svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg><span id="repeatLabel">Automática: siguiente</span></button><div class="volume"><button type="button" id="mute" class="icon-btn" aria-label="Silenciar" title="Silenciar" style="padding:5px;min-width:30px;min-height:30px"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></svg></button><input id="volume" type="range" min="0" max="1" step=".01" value="0.8" aria-label="Volumen" /></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <audio id="audio" preload="auto"></audio>
+  <script>
+    'use strict';
+    const API_KEY = 'AIzaSyCNxoaDgxetdYNpURduaL2Y59PWVrfCKYE';
+    const $ = id => document.getElementById(id);
+    const audio = $('audio');
+
+    let tracks = [], currentIndex = -1, shuffleOn = false, repeatMode = 'off';
+    let activeObjectUrl = null, abortController = null, loadSequence = 0;
+    let currentFileMode = '', fallbackAttempted = false;
+
+    const audioExt = /\.(mp3|wav|flac|ogg|m4a|aac|opus|aiff|aif|wma|webm|mp4)$/i;
+    const mimeAudio = /^audio\//i;
+
+    function setStatus(message, type = 'info') {
+      const node = $('status');
+      node.textContent = message;
+      node.dataset.type = type;
+    }
+
+    function setConnection(message, connected) {
+      $('connectionText').textContent = message;
+      $('connectionDot').classList.toggle('good', Boolean(connected));
+    }
+
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+      const s = Math.floor(seconds);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    function humanSize(n) {
+      const v = Number(n);
+      if (!Number.isFinite(v) || !v) return 'Audio';
+      return v >= 1048576 ? `${(v / 1048576).toFixed(1)} MB` : `${Math.round(v / 1024)} KB`;
+    }
+
+    function cleanTitle(n) {
+      return (n || 'Canción sin título').replace(audioExt, '').replace(/_/g, ' ');
+    }
+
+    function isAudio(file) {
+      return mimeAudio.test(file.mimeType || file.type || '') || audioExt.test(file.name || '');
+    }
+
+    function parseFolder(value) {
+      const raw = (value || '').trim();
+      if (/^[A-Za-z0-9_-]{12,}$/.test(raw)) return { id: raw, resourceKey: '' };
+      let url;
+      try { url = new URL(raw); } catch { throw new Error(`Enlace no válido: ${raw}`); }
+      if (url.hostname !== 'drive.google.com' && url.hostname !== 'www.drive.google.com') {
+        throw new Error(`El enlace debe ser de drive.google.com: ${raw}`);
+      }
+      const found = url.pathname.match(/\/folders\/([A-Za-z0-9_-]+)/) || url.pathname.match(/\/folderview\/([A-Za-z0-9_-]+)/);
+      const id = found?.[1] || url.searchParams.get('id');
+      if (!id || !/^[A-Za-z0-9_-]{10,}$/.test(id)) {
+        throw new Error(`No se encontró el ID de carpeta en: ${raw}`);
+      }
+      return { id, resourceKey: url.searchParams.get('resourcekey') || '' };
+    }
+
+    function toggleBusy(busy) {
+      $('loadPublic').disabled = busy;
+      $('addEntry').disabled = busy;
+    }
+
+    function closePreviousAudio() {
+      if (abortController) { abortController.abort(); abortController = null; }
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+      if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
+      currentFileMode = '';
+      fallbackAttempted = false;
+    }
+
+    function setTracks(nextTracks, folderCount) {
+      loadSequence++;
+      closePreviousAudio();
+      // Eliminar duplicados si se puso la misma carpeta dos veces
+      const uniqueMap = new Map();
+      nextTracks.forEach(t => { if (!uniqueMap.has(t.id)) uniqueMap.set(t.id, t); });
+      tracks = Array.from(uniqueMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }));
+
+      currentIndex = -1;
+      const sourceLabel = folderCount === 1 ? '1 carpeta' : `${folderCount} carpetas`;
+      $('songCount').textContent = `${tracks.length} ${tracks.length === 1 ? 'pista' : 'pistas'}`;
+      $('currentTitle').textContent = 'Elige una canción';
+      $('currentTitle').title = 'Elige una canción';
+      $('currentSubtitle').textContent = sourceLabel;
+      $('seek').value = 0;
+      $('currentTime').textContent = '0:00';
+      $('duration').textContent = '0:00';
+      $('search').value = '';
+      updatePlayAppearance();
+      renderPlaylist();
+      setConnection(`${tracks.length} canciones · ${sourceLabel}`, tracks.length > 0);
+      setStatus(
+        tracks.length
+          ? `${tracks.length} ${tracks.length === 1 ? 'canción cargada' : 'canciones cargadas'} desde ${sourceLabel}.`
+          : 'No se encontraron audios compatibles en las carpetas.',
+        tracks.length ? 'success' : 'info'
+      );
+    }
+
+    function renderPlaylist() {
+      const search = $('search').value.trim().toLocaleLowerCase('es');
+      const root = $('playlist');
+      root.replaceChildren();
+      if (!tracks.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.innerHTML = '<span class="empty-glyph">♫</span><span>Sin canciones cargadas.</span>';
+        root.append(empty);
+        return;
+      }
+      let shown = 0;
+      tracks.forEach((track, i) => {
+        if (!cleanTitle(track.name).toLocaleLowerCase('es').includes(search)) return;
+        shown++;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'track' + (currentIndex === i ? ' active' : '');
+        btn.dataset.index = String(i);
+        btn.setAttribute('aria-label', `Reproducir ${cleanTitle(track.name)}`);
+
+        const num = document.createElement('span');
+        num.className = 'track-num';
+        num.textContent = currentIndex === i && !audio.paused ? '♫' : String(i + 1).padStart(2, '0');
+
+        const icon = document.createElement('span');
+        icon.className = 'track-icon';
+        icon.textContent = '♪';
+        icon.setAttribute('aria-hidden', 'true');
+
+        const details = document.createElement('span');
+        details.className = 'track-details';
+
+        const name = document.createElement('span');
+        name.className = 'track-title';
+        name.textContent = cleanTitle(track.name);
+        name.title = track.name;
+
+        const meta = document.createElement('span');
+        meta.className = 'track-meta';
+        meta.textContent = humanSize(track.size);
+
+        details.append(name, meta);
+        btn.append(num, icon, details);
+        root.append(btn);
+      });
+      if (!shown) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'Sin coincidencias.';
+        root.append(empty);
+      }
+    }
+
+    function updatePlayAppearance() {
+      const playing = !audio.paused && Boolean(audio.src);
+      $('artwork').classList.toggle('spinning', playing);
+      $('playIcon').innerHTML = playing
+        ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>'
+        : '<path d="M8 4.5v15L20 12 8 4.5Z"/>';
+      $('playPause').setAttribute('aria-label', playing ? 'Pausar' : 'Reproducir');
+      $('playPause').title = playing ? 'Pausar' : 'Reproducir';
+      renderPlaylist();
+    }
+
+    async function getGoogleJson(url, folder) {
+      const headers = {};
+      if (folder.resourceKey) {
+        headers['X-Goog-Drive-Resource-Keys'] = `${folder.id}/${folder.resourceKey}`;
+      }
+      url.searchParams.set('key', API_KEY);
+      let response;
+      try {
+        response = await fetch(url, { headers });
+      } catch {
+        throw new Error('Error de red al conectar con Google Drive.');
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const reason = payload?.error?.message || `Error ${response.status}`;
+        throw new Error(`Error en Drive: ${reason}`);
+      }
+      return payload;
+    }
+
+    async function listDriveFolder(folder) {
+      const items = [];
+      let pageToken = '';
+      let pages = 0;
+      do {
+        const url = new URL('https://www.googleapis.com/drive/v3/files');
+        url.searchParams.set('q', `'${folder.id}' in parents and trashed = false`);
+        url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType,size,resourceKey)');
+        url.searchParams.set('pageSize', '1000');
+        url.searchParams.set('supportsAllDrives', 'true');
+        url.searchParams.set('includeItemsFromAllDrives', 'true');
+        if (pageToken) url.searchParams.set('pageToken', pageToken);
+        const data = await getGoogleJson(url, folder);
+        items.push(...(data.files || []));
+        pageToken = data.nextPageToken || '';
+        if (++pages >= 100) throw new Error('Carpeta demasiado grande.');
+      } while (pageToken);
+
+      return items.filter(isAudio).map(x => ({
+        id: x.id,
+        name: x.name,
+        size: x.size,
+        mimeType: x.mimeType,
+        resourceKey: x.resourceKey || '',
+        folderResourceKey: folder.resourceKey || ''
+      }));
+    }
+
+    async function loadAllPublic(ev) {
+      ev.preventDefault();
+      const inputs = Array.from(document.querySelectorAll('.folder-input'))
+        .map(el => el.value.trim())
+        .filter(Boolean);
+
+      if (!inputs.length) {
+        setStatus('Introduce al menos un enlace de carpeta.', 'error');
+        return;
+      }
+
+      toggleBusy(true);
+      setStatus(`Cargando ${inputs.length} ${inputs.length === 1 ? 'carpeta' : 'carpetas'}...`);
+
+      try {
+        const folders = inputs.map(parseFolder);
+        const results = await Promise.all(folders.map(f => listDriveFolder(f)));
+        const combinedTracks = results.flat();
+        setTracks(combinedTracks, folders.length);
+      } catch (e) {
+        setStatus(e.message || 'No se pudieron cargar las carpetas.', 'error');
+      } finally {
+        toggleBusy(false);
+      }
+    }
+
+    async function loadBlobAudio(track, seq) {
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+      const controller = abortController;
+      const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(track.id)}`);
+      url.searchParams.set('alt', 'media');
+      url.searchParams.set('key', API_KEY);
+
+      const headers = {};
+      if (track.resourceKey) {
+        headers['X-Goog-Drive-Resource-Keys'] = `${track.id}/${track.resourceKey}`;
+      }
+
+      setStatus(`Cargando «${cleanTitle(track.name)}»...`);
+      let response;
+      try {
+        response = await fetch(url, { headers, signal: controller.signal });
+      } catch (e) {
+        if (e.name === 'AbortError') return null;
+        throw new Error('Error al obtener el audio desde Drive.');
+      }
+      if (!response.ok) {
+        throw new Error(`No se pudo reproducir «${track.name}» (${response.status}).`);
+      }
+      const blob = await response.blob();
+      if (seq !== loadSequence) return null;
+      if (!blob.size) throw new Error('Archivo de audio vacío.');
+      if (blob.type.startsWith('text/') || blob.type.includes('html')) {
+        throw new Error('Drive no devolvió un archivo de audio válido.');
+      }
+      return URL.createObjectURL(blob);
+    }
+
+    async function playIndex(index) {
+      if (index < 0 || index >= tracks.length) return;
+      const seq = ++loadSequence;
+      closePreviousAudio();
+      currentIndex = index;
+      const track = tracks[index];
+
+      $('currentTitle').textContent = cleanTitle(track.name);
+      $('currentTitle').title = track.name;
+      $('currentSubtitle').textContent = 'Google Drive Streaming';
+      $('seek').value = 0;
+      $('currentTime').textContent = '0:00';
+      $('duration').textContent = '0:00';
+      updatePlayAppearance();
+
+      try {
+        if (!track.resourceKey && !track.folderResourceKey) {
+          const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(track.id)}`);
+          url.searchParams.set('alt', 'media');
+          url.searchParams.set('key', API_KEY);
+          audio.src = url.toString();
+          currentFileMode = 'direct';
+        } else {
+          const objectUrl = await loadBlobAudio(track, seq);
+          if (!objectUrl || seq !== loadSequence) return;
+          activeObjectUrl = objectUrl;
+          audio.src = objectUrl;
+          currentFileMode = 'blob';
+        }
+        if (seq !== loadSequence) return;
+        await startPlayback();
+      } catch (e) {
+        if (seq === loadSequence) {
+          setStatus(e.message || 'No se pudo reproducir este archivo.', 'error');
+          updatePlayAppearance();
+        }
+      }
+    }
+
+    async function startPlayback() {
+      try {
+        await audio.play();
+        setStatus(`Reproduciendo: ${cleanTitle(tracks[currentIndex]?.name)}`, 'success');
+      } catch (err) {
+        if (err.name === 'NotAllowedError') {
+          setStatus('Pulsa ▶ para iniciar la reproducción.', 'info');
+        } else if (err.name !== 'AbortError' && err.name !== 'NotSupportedError') {
+          setStatus(`Error de reproducción: ${err.message}`, 'error');
+        }
+      }
+      updatePlayAppearance();
+    }
+
+    async function retryDirectAsBlob() {
+      if (fallbackAttempted || currentFileMode !== 'direct' || currentIndex < 0) return;
+      fallbackAttempted = true;
+      const seq = loadSequence;
+      const track = tracks[currentIndex];
+      try {
+        const objectUrl = await loadBlobAudio(track, seq);
+        if (!objectUrl || seq !== loadSequence) return;
+        audio.removeAttribute('src');
+        audio.load();
+        activeObjectUrl = objectUrl;
+        audio.src = objectUrl;
+        currentFileMode = 'blob';
+        await startPlayback();
+      } catch (e) {
+        if (seq === loadSequence) setStatus(e.message || 'No se pudo reproducir el audio.', 'error');
+      }
+    }
+
+    function nextTrack(automatic = false) {
+      if (!tracks.length) return;
+      if (shuffleOn && tracks.length > 1) {
+        let index;
+        do { index = Math.floor(Math.random() * tracks.length); } while (index === currentIndex);
+        void playIndex(index);
+        return;
+      }
+      let index = currentIndex + 1;
+      if (index >= tracks.length) {
+        if (automatic && repeatMode === 'off') {
+          audio.pause();
+          audio.currentTime = 0;
+          updatePlayAppearance();
+          setStatus('Fin de la lista.');
+          return;
+        }
+        index = 0;
+      }
+      void playIndex(index);
+    }
+
+    function previousTrack() {
+      if (!tracks.length) return;
+      if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+      if (shuffleOn && tracks.length > 1) {
+        let index;
+        do { index = Math.floor(Math.random() * tracks.length); } while (index === currentIndex);
+        void playIndex(index);
+        return;
+      }
+      void playIndex((currentIndex - 1 + tracks.length) % tracks.length);
+    }
+
+    function toggleRepeat() {
+      repeatMode = repeatMode === 'off' ? 'one' : repeatMode === 'one' ? 'all' : 'off';
+      const labels = { off: 'Automática: siguiente', one: 'Repetir esta canción', all: 'Repetir toda la lista' };
+      $('repeatLabel').textContent = labels[repeatMode];
+      $('repeat').setAttribute('aria-pressed', String(repeatMode !== 'off'));
+      $('repeat').title = labels[repeatMode];
+      $('repeatModeButton').setAttribute('aria-pressed', String(repeatMode !== 'off'));
+    }
+
+    // Gestión de múltiples inputs de carpetas
+    $('addEntry').addEventListener('click', () => {
+      const container = $('folderEntries');
+      const count = container.children.length + 1;
+      const row = document.createElement('div');
+      row.className = 'entry-row';
+      row.innerHTML = `
+        <input type="text" class="folder-input" autocomplete="url" spellcheck="false" placeholder="https://drive.google.com/drive/folders/..." aria-label="Enlace de carpeta ${count}" />
+        <button type="button" class="btn-remove" title="Quitar enlace" aria-label="Quitar enlace">✕</button>
+      `;
+      container.appendChild(row);
+      row.querySelector('input').focus();
+    });
+
+    $('folderEntries').addEventListener('click', ev => {
+      const btn = ev.target.closest('.btn-remove');
+      if (!btn) return;
+      const container = $('folderEntries');
+      if (container.children.length > 1) {
+        btn.closest('.entry-row').remove();
+      } else {
+        btn.closest('.entry-row').querySelector('input').value = '';
+      }
+    });
+
+    $('publicForm').addEventListener('submit', loadAllPublic);
+    $('search').addEventListener('input', renderPlaylist);
+    $('playlist').addEventListener('click', ev => {
+      const target = ev.target.closest('button[data-index]');
+      if (target) void playIndex(Number(target.dataset.index));
+    });
+    $('playPause').addEventListener('click', () => {
+      if (!tracks.length) { setStatus('Carga canciones primero.'); return; }
+      if (currentIndex < 0) void playIndex(0);
+      else if (audio.paused) void startPlayback();
+      else audio.pause();
+    });
+    $('next').addEventListener('click', () => nextTrack(false));
+    $('previous').addEventListener('click', previousTrack);
+    $('repeat').addEventListener('click', toggleRepeat);
+    $('repeatModeButton').addEventListener('click', toggleRepeat);
+    $('shuffle').addEventListener('click', () => {
+      shuffleOn = !shuffleOn;
+      $('shuffle').setAttribute('aria-pressed', String(shuffleOn));
+    });
+    $('volume').addEventListener('input', e => {
+      audio.volume = Number(e.target.value);
+      audio.muted = false;
+    });
+    $('mute').addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      $('mute').setAttribute('aria-label', audio.muted ? 'Activar sonido' : 'Silenciar');
+      $('mute').style.opacity = audio.muted ? '.5' : '1';
+    });
+    $('seek').addEventListener('input', e => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
+      }
+    });
+
+    audio.volume = 0.8;
+    audio.addEventListener('timeupdate', () => {
+      const d = audio.duration;
+      $('currentTime').textContent = formatTime(audio.currentTime);
+      if (Number.isFinite(d) && d > 0) $('seek').value = String((audio.currentTime / d) * 100);
+    });
+    audio.addEventListener('loadedmetadata', () => { $('duration').textContent = formatTime(audio.duration); });
+    audio.addEventListener('durationchange', () => { $('duration').textContent = formatTime(audio.duration); });
+    audio.addEventListener('play', updatePlayAppearance);
+    audio.addEventListener('pause', updatePlayAppearance);
+    audio.addEventListener('ended', () => {
+      if (repeatMode === 'one') {
+        audio.currentTime = 0;
+        void startPlayback();
+      } else {
+        nextTrack(true);
+      }
+    });
+    audio.addEventListener('error', () => {
+      if (!audio.getAttribute('src')) return;
+      if (currentFileMode === 'direct' && !fallbackAttempted) {
+        void retryDirectAsBlob();
+        return;
+      }
+      setStatus('No se pudo reproducir el archivo.', 'error');
+      updatePlayAppearance();
+    });
+  </script>
+</body>
+</html>
